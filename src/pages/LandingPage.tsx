@@ -21,7 +21,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     signUpWithEmail,
     error: authError,
     isLoading,
-    clearError,
   } = useAuth();
 
   const [showAuthModal, setShowAuthModal] = useState(false);
