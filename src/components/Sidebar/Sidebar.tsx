@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import "./Sidebar.css";
 import { ThemeToggle } from "../Layout";
-import { useDocuments } from "../../contexts";
+import { useDocuments, type Document, type Folder } from "../../contexts";
 
 interface SidebarProps {
   collapsed: boolean;
@@ -10,6 +10,301 @@ interface SidebarProps {
   onLogout?: () => void;
   onLogoClick?: () => void;
 }
+
+// Icons as components for cleaner code
+const ChevronIcon: React.FC<{ expanded: boolean }> = ({ expanded }) => (
+  <svg
+    width="12"
+    height="12"
+    viewBox="0 0 12 12"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={`chevron-icon ${expanded ? "expanded" : ""}`}
+  >
+    <path
+      d="M4 2L8 6L4 10"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const FolderIcon: React.FC<{ expanded: boolean }> = ({ expanded }) => (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 16 16"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className="folder-icon"
+  >
+    {expanded ? (
+      <path
+        d="M2 4a1 1 0 011-1h3.586a1 1 0 01.707.293L8 4h5a1 1 0 011 1v1H2V4zM2 7h12v5a1 1 0 01-1 1H3a1 1 0 01-1-1V7z"
+        fill="currentColor"
+      />
+    ) : (
+      <path
+        d="M2 4a1 1 0 011-1h3.586a1 1 0 01.707.293L8 4h5a1 1 0 011 1v7a1 1 0 01-1 1H3a1 1 0 01-1-1V4z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+    )}
+  </svg>
+);
+
+const DocIcon: React.FC = () => (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 16 16"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className="doc-icon"
+  >
+    <path
+      d="M3 2h7l3 3v9a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    />
+    <path
+      d="M5 8h6M5 11h4"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+const PlusIcon: React.FC = () => (
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 14 14"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M7 2v10M2 7h10"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+const DeleteIcon: React.FC = () => (
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 14 14"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M3 3l8 8M11 3l-8 8"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+// Folder Item Component
+interface FolderItemProps {
+  folder: Folder;
+  level: number;
+  documents: Document[];
+  activeDocId: string | null;
+  onSelectDocument: (id: string) => void;
+  onDeleteDocument: (e: React.MouseEvent, id: string) => void;
+  onToggleFolder: (id: string) => void;
+  onCreateDocument: (folderId: string) => void;
+  onDeleteFolder: (id: string) => void;
+  onRenameFolder: (id: string, name: string) => void;
+  subfolders: Folder[];
+  allFolders: Folder[];
+  allDocuments: Document[];
+  formatDate: (timestamp: number) => string;
+}
+
+const FolderItem: React.FC<FolderItemProps> = ({
+  folder,
+  level,
+  documents,
+  activeDocId,
+  onSelectDocument,
+  onDeleteDocument,
+  onToggleFolder,
+  onCreateDocument,
+  onDeleteFolder,
+  onRenameFolder,
+  subfolders,
+  allFolders,
+  allDocuments,
+  formatDate,
+}) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(folder.name);
+
+  const handleRename = () => {
+    if (editName.trim()) {
+      onRenameFolder(folder.id, editName.trim());
+    }
+    setIsEditing(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleRename();
+    } else if (e.key === "Escape") {
+      setEditName(folder.name);
+      setIsEditing(false);
+    }
+  };
+
+  const getNestedSubfolders = (parentId: string) =>
+    allFolders.filter((f) => f.parentId === parentId);
+
+  const getNestedDocuments = (folderId: string) =>
+    allDocuments.filter((d) => d.folderId === folderId);
+
+  return (
+    <div className="folder-container">
+      <div
+        className="folder-item"
+        style={{ paddingLeft: `${12 + level * 16}px` }}
+      >
+        <button
+          className="folder-toggle"
+          onClick={() => onToggleFolder(folder.id)}
+        >
+          <ChevronIcon expanded={folder.isExpanded} />
+        </button>
+        <FolderIcon expanded={folder.isExpanded} />
+        {isEditing ? (
+          <input
+            type="text"
+            className="folder-name-input"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            onBlur={handleRename}
+            onKeyDown={handleKeyDown}
+            autoFocus
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <span
+            className="folder-name"
+            onDoubleClick={() => setIsEditing(true)}
+          >
+            {folder.name}
+          </span>
+        )}
+        <div className="folder-actions">
+          <button
+            className="folder-action-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              onCreateDocument(folder.id);
+            }}
+            title="Add document"
+          >
+            <PlusIcon />
+          </button>
+          <button
+            className="folder-action-btn delete"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDeleteFolder(folder.id);
+            }}
+            title="Delete folder"
+          >
+            <DeleteIcon />
+          </button>
+        </div>
+      </div>
+
+      {folder.isExpanded && (
+        <div className="folder-children">
+          {/* Nested Folders */}
+          {subfolders.map((subfolder) => (
+            <FolderItem
+              key={subfolder.id}
+              folder={subfolder}
+              level={level + 1}
+              documents={getNestedDocuments(subfolder.id)}
+              activeDocId={activeDocId}
+              onSelectDocument={onSelectDocument}
+              onDeleteDocument={onDeleteDocument}
+              onToggleFolder={onToggleFolder}
+              onCreateDocument={onCreateDocument}
+              onDeleteFolder={onDeleteFolder}
+              onRenameFolder={onRenameFolder}
+              subfolders={getNestedSubfolders(subfolder.id)}
+              allFolders={allFolders}
+              allDocuments={allDocuments}
+              formatDate={formatDate}
+            />
+          ))}
+          {/* Documents in this folder */}
+          {documents.map((doc) => (
+            <DocumentItem
+              key={doc.id}
+              doc={doc}
+              level={level + 1}
+              isActive={doc.id === activeDocId}
+              canDelete={allDocuments.length > 1}
+              onSelect={() => onSelectDocument(doc.id)}
+              onDelete={(e) => onDeleteDocument(e, doc.id)}
+              formatDate={formatDate}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Document Item Component
+interface DocumentItemProps {
+  doc: Document;
+  level: number;
+  isActive: boolean;
+  canDelete: boolean;
+  onSelect: () => void;
+  onDelete: (e: React.MouseEvent) => void;
+  formatDate: (timestamp: number) => string;
+}
+
+const DocumentItem: React.FC<DocumentItemProps> = ({
+  doc,
+  level,
+  isActive,
+  canDelete,
+  onSelect,
+  onDelete,
+  formatDate,
+}) => (
+  <div
+    className={`sidebar-item document-item ${isActive ? "active" : ""}`}
+    style={{ paddingLeft: `${12 + level * 16 + 24}px` }}
+    onClick={onSelect}
+  >
+    <DocIcon />
+    <div className="doc-info">
+      <span className="doc-title">{doc.title || "Untitled"}</span>
+      <span className="doc-date">{formatDate(doc.updatedAt)}</span>
+    </div>
+    {canDelete && (
+      <button className="doc-delete" onClick={onDelete} title="Delete document">
+        <DeleteIcon />
+      </button>
+    )}
+  </div>
+);
 
 export const Sidebar: React.FC<SidebarProps> = ({
   collapsed,
@@ -20,11 +315,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const {
     documents,
+    folders,
     activeDocId,
     createDocument,
     setActiveDocument,
     deleteDocument,
+    createFolder,
+    renameFolder,
+    deleteFolder,
+    toggleFolderExpanded,
+    getDocumentsInFolder,
+    getSubfolders,
   } = useDocuments();
+
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
 
   // Format date for display
   const formatDate = (timestamp: number) => {
@@ -40,8 +345,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return date.toLocaleDateString();
   };
 
-  const handleNewDocument = () => {
-    createDocument();
+  const handleNewDocument = async (folderId: string | null = null) => {
+    await createDocument(folderId);
   };
 
   const handleSelectDocument = (docId: string) => {
@@ -54,6 +359,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
       deleteDocument(docId);
     }
   };
+
+  const handleCreateFolder = () => {
+    if (newFolderName.trim()) {
+      createFolder(newFolderName.trim());
+      setNewFolderName("");
+      setIsCreatingFolder(false);
+    }
+  };
+
+  const handleFolderKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleCreateFolder();
+    } else if (e.key === "Escape") {
+      setNewFolderName("");
+      setIsCreatingFolder(false);
+    }
+  };
+
+  // Get root level folders and documents
+  const rootFolders = getSubfolders(null);
+  const rootDocuments = getDocumentsInFolder(null);
 
   return (
     <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
@@ -100,7 +426,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       <div className="sidebar-actions">
-        <button className="new-doc-btn" onClick={handleNewDocument}>
+        <button className="new-doc-btn" onClick={() => handleNewDocument()}>
           <svg
             width="16"
             height="16"
@@ -117,66 +443,68 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </svg>
           New Document
         </button>
+        <button
+          className="new-folder-btn"
+          onClick={() => setIsCreatingFolder(true)}
+        >
+          <FolderIcon expanded={false} />
+          New Folder
+        </button>
       </div>
 
       <div className="sidebar-section">
         <div className="section-label">Documents ({documents.length})</div>
         <nav className="sidebar-list">
-          {documents.map((doc) => (
-            <div
-              key={doc.id}
-              className={`sidebar-item ${
-                doc.id === activeDocId ? "active" : ""
-              }`}
-              onClick={() => handleSelectDocument(doc.id)}
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                className="doc-icon"
-              >
-                <path
-                  d="M3 2h7l3 3v9a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                />
-                <path
-                  d="M5 8h6M5 11h4"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                />
-              </svg>
-              <div className="doc-info">
-                <span className="doc-title">{doc.title || "Untitled"}</span>
-                <span className="doc-date">{formatDate(doc.updatedAt)}</span>
-              </div>
-              {documents.length > 1 && (
-                <button
-                  className="doc-delete"
-                  onClick={(e) => handleDeleteDocument(e, doc.id)}
-                  title="Delete document"
-                >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 14 14"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M3 3l8 8M11 3l-8 8"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </button>
-              )}
+          {/* New Folder Input */}
+          {isCreatingFolder && (
+            <div className="new-folder-input-container">
+              <FolderIcon expanded={false} />
+              <input
+                type="text"
+                className="new-folder-input"
+                placeholder="Folder name..."
+                value={newFolderName}
+                onChange={(e) => setNewFolderName(e.target.value)}
+                onBlur={handleCreateFolder}
+                onKeyDown={handleFolderKeyDown}
+                autoFocus
+              />
             </div>
+          )}
+
+          {/* Root Folders */}
+          {rootFolders.map((folder) => (
+            <FolderItem
+              key={folder.id}
+              folder={folder}
+              level={0}
+              documents={getDocumentsInFolder(folder.id)}
+              activeDocId={activeDocId}
+              onSelectDocument={handleSelectDocument}
+              onDeleteDocument={handleDeleteDocument}
+              onToggleFolder={toggleFolderExpanded}
+              onCreateDocument={(folderId) => handleNewDocument(folderId)}
+              onDeleteFolder={deleteFolder}
+              onRenameFolder={renameFolder}
+              subfolders={getSubfolders(folder.id)}
+              allFolders={folders}
+              allDocuments={documents}
+              formatDate={formatDate}
+            />
+          ))}
+
+          {/* Root Documents (not in any folder) */}
+          {rootDocuments.map((doc) => (
+            <DocumentItem
+              key={doc.id}
+              doc={doc}
+              level={0}
+              isActive={doc.id === activeDocId}
+              canDelete={documents.length > 1}
+              onSelect={() => handleSelectDocument(doc.id)}
+              onDelete={(e) => handleDeleteDocument(e, doc.id)}
+              formatDate={formatDate}
+            />
           ))}
         </nav>
       </div>

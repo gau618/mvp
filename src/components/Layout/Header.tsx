@@ -5,9 +5,14 @@ import "./Header.css";
 interface HeaderProps {
   title: string;
   subtitle?: React.ReactNode;
+  isOffline?: boolean;
 }
 
-export const Header: React.FC<HeaderProps> = ({ title, subtitle }) => {
+export const Header: React.FC<HeaderProps> = ({
+  title,
+  subtitle,
+  isOffline,
+}) => {
   return (
     <header className="header">
       <div className="header-content">
@@ -39,6 +44,12 @@ export const Header: React.FC<HeaderProps> = ({ title, subtitle }) => {
             <h1 className="header-title">{title}</h1>
           </div>
           <div className="header-actions">
+            {isOffline && (
+              <div className="header-badge offline-badge">
+                <span className="badge-dot offline" />
+                <span className="badge-text">Offline</span>
+              </div>
+            )}
             <div className="header-badge">
               <span className="badge-dot" />
               <span className="badge-text">AI</span>

@@ -1,77 +1,88 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth, useTheme } from "../contexts";
+import { ThemeToggle, ProfileDropdown } from "../components/Layout";
 import "./LandingPage.css";
 
 interface LandingPageProps {
-  onLogin: (user: { email: string; name: string }) => void;
   user?: { email: string; name: string } | null;
   onEnterEditor?: () => void;
   onLogout?: () => void;
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({
-  onLogin,
   user,
   onEnterEditor,
   onLogout,
 }) => {
+  const { theme } = useTheme();
+  const {
+    signInWithGoogle,
+    signInWithEmail,
+    signUpWithEmail,
+    error: authError,
+    isLoading,
+    clearError,
+  } = useAuth();
+
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [error, setError] = useState("");
+  const [localError, setLocalError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Clear errors when modal closes
+  useEffect(() => {
+    if (!showAuthModal) {
+      setLocalError("");
+      setEmail("");
+      setPassword("");
+      setName("");
+    }
+  }, [showAuthModal]);
+
+  // Clear errors when switching between login/signup
+  useEffect(() => {
+    setLocalError("");
+  }, [isLogin]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    setLocalError("");
 
     if (!email || !password) {
-      setError("Please fill in all fields");
+      setLocalError("Please fill in all fields");
       return;
     }
 
     if (!isLogin && !name) {
-      setError("Please enter your name");
+      setLocalError("Please enter your name");
       return;
     }
 
-    // Get existing users from localStorage
-    const users = JSON.parse(localStorage.getItem("chronicle_users") || "[]");
-
     if (isLogin) {
-      // Login logic
-      const user = users.find(
-        (u: any) => u.email === email && u.password === password
-      );
-      if (user) {
-        localStorage.setItem(
-          "chronicle_current_user",
-          JSON.stringify({ email: user.email, name: user.name })
-        );
-        onLogin({ email: user.email, name: user.name });
-        setShowAuthModal(false);
-      } else {
-        setError("Invalid email or password");
-      }
+      signInWithEmail(email, password);
     } else {
-      // Sign up logic
-      const existingUser = users.find((u: any) => u.email === email);
-      if (existingUser) {
-        setError("An account with this email already exists");
-        return;
-      }
-
-      const newUser = { email, password, name };
-      users.push(newUser);
-      localStorage.setItem("chronicle_users", JSON.stringify(users));
-      localStorage.setItem(
-        "chronicle_current_user",
-        JSON.stringify({ email, name })
-      );
-      onLogin({ email, name });
-      setShowAuthModal(false);
+      signUpWithEmail(email, password, name);
     }
   };
+
+  const handleGoogleSignIn = () => {
+    signInWithGoogle();
+  };
+
+  const handleDemoLogin = () => {
+    signInWithEmail("demo@chronicle.app", "demo123456");
+  };
+
+  // Close modal when user successfully logs in
+  useEffect(() => {
+    if (user && showAuthModal) {
+      setShowAuthModal(false);
+    }
+  }, [user, showAuthModal]);
+
+  const displayError = localError || authError;
 
   const features = [
     {
@@ -232,7 +243,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   ];
 
   return (
-    <div className="landing-page">
+    <div className="landing-page" data-theme={theme}>
       {/* Navigation */}
       <nav className="landing-nav">
         <div className="nav-container">
@@ -255,18 +266,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <span className="logo-text">Chronicle</span>
           </div>
           <div className="nav-actions">
+            <ThemeToggle />
             {user ? (
-              <>
-                <button className="nav-btn secondary" onClick={onLogout}>
-                  Log out
-                </button>
-                <button
-                  className="nav-btn primary"
-                  onClick={() => onEnterEditor?.()}
-                >
-                  Go to Editor
-                </button>
-              </>
+              <ProfileDropdown
+                user={user}
+                onLogout={onLogout!}
+                onEnterEditor={onEnterEditor!}
+              />
             ) : (
               <>
                 <button
@@ -348,7 +354,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     </svg>
                   </button>
                 )}
-                <button className="hero-btn secondary">
+                <button
+                  className="hero-btn secondary"
+                  onClick={handleDemoLogin}
+                  disabled={isLoading}
+                >
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                     <circle
                       cx="10"
@@ -359,7 +369,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     />
                     <path d="M8 7L13 10L8 13V7Z" fill="currentColor" />
                   </svg>
-                  View Demo
+                  {isLoading ? "Loading..." : "Try Demo"}
                 </button>
               </div>
               <div className="hero-stats">
@@ -435,29 +445,127 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="cta-section">
-        <div className="cta-container">
-          <h2 className="cta-title">Elevate Your Writing Workflow</h2>
-          <p className="cta-description">
-            Join thousands of professionals who trust Chronicle for their
-            critical documentation and creative needs.
-          </p>
-          {user ? (
-            <button className="cta-btn" onClick={() => onEnterEditor?.()}>
-              Go to Editor
-            </button>
-          ) : (
-            <button
-              className="cta-btn"
-              onClick={() => {
-                setIsLogin(false);
-                setShowAuthModal(true);
-              }}
-            >
-              Start Your Free Trial
-            </button>
-          )}
+      {/* Trusted By Section */}
+      <section className="trusted-section">
+        <div className="trusted-container">
+          <p className="trusted-label">Trusted by teams at leading companies</p>
+          <div className="trusted-marquee">
+            <div className="trusted-track">
+              <div className="trusted-logo">
+                <svg viewBox="0 0 160 50" fill="currentColor">
+                  <text x="10" y="35" fontSize="24" fontWeight="bold">
+                    Google
+                  </text>
+                </svg>
+              </div>
+              <div className="trusted-logo">
+                <svg viewBox="0 0 160 50" fill="currentColor">
+                  <text x="10" y="35" fontSize="24" fontWeight="bold">
+                    Microsoft
+                  </text>
+                </svg>
+              </div>
+              <div className="trusted-logo">
+                <svg viewBox="0 0 160 50" fill="currentColor">
+                  <text x="10" y="35" fontSize="24" fontWeight="bold">
+                    Amazon
+                  </text>
+                </svg>
+              </div>
+              <div className="trusted-logo">
+                <svg viewBox="0 0 160 50" fill="currentColor">
+                  <text x="10" y="35" fontSize="24" fontWeight="bold">
+                    Meta
+                  </text>
+                </svg>
+              </div>
+              <div className="trusted-logo">
+                <svg viewBox="0 0 160 50" fill="currentColor">
+                  <text x="10" y="35" fontSize="24" fontWeight="bold">
+                    Netflix
+                  </text>
+                </svg>
+              </div>
+              <div className="trusted-logo">
+                <svg viewBox="0 0 160 50" fill="currentColor">
+                  <text x="10" y="35" fontSize="24" fontWeight="bold">
+                    Spotify
+                  </text>
+                </svg>
+              </div>
+              <div className="trusted-logo">
+                <svg viewBox="0 0 160 50" fill="currentColor">
+                  <text x="10" y="35" fontSize="24" fontWeight="bold">
+                    Slack
+                  </text>
+                </svg>
+              </div>
+              <div className="trusted-logo">
+                <svg viewBox="0 0 160 50" fill="currentColor">
+                  <text x="10" y="35" fontSize="24" fontWeight="bold">
+                    Stripe
+                  </text>
+                </svg>
+              </div>
+              {/* Duplicate for seamless loop */}
+              <div className="trusted-logo">
+                <svg viewBox="0 0 160 50" fill="currentColor">
+                  <text x="10" y="35" fontSize="24" fontWeight="bold">
+                    Google
+                  </text>
+                </svg>
+              </div>
+              <div className="trusted-logo">
+                <svg viewBox="0 0 160 50" fill="currentColor">
+                  <text x="10" y="35" fontSize="24" fontWeight="bold">
+                    Microsoft
+                  </text>
+                </svg>
+              </div>
+              <div className="trusted-logo">
+                <svg viewBox="0 0 160 50" fill="currentColor">
+                  <text x="10" y="35" fontSize="24" fontWeight="bold">
+                    Amazon
+                  </text>
+                </svg>
+              </div>
+              <div className="trusted-logo">
+                <svg viewBox="0 0 160 50" fill="currentColor">
+                  <text x="10" y="35" fontSize="24" fontWeight="bold">
+                    Meta
+                  </text>
+                </svg>
+              </div>
+              <div className="trusted-logo">
+                <svg viewBox="0 0 160 50" fill="currentColor">
+                  <text x="10" y="35" fontSize="24" fontWeight="bold">
+                    Netflix
+                  </text>
+                </svg>
+              </div>
+              <div className="trusted-logo">
+                <svg viewBox="0 0 160 50" fill="currentColor">
+                  <text x="10" y="35" fontSize="24" fontWeight="bold">
+                    Spotify
+                  </text>
+                </svg>
+              </div>
+              <div className="trusted-logo">
+                <svg viewBox="0 0 160 50" fill="currentColor">
+                  <text x="10" y="35" fontSize="24" fontWeight="bold">
+                    Slack
+                  </text>
+                </svg>
+              </div>
+              <div className="trusted-logo">
+                <svg viewBox="0 0 160 50" fill="currentColor">
+                  <text x="10" y="35" fontSize="24" fontWeight="bold">
+                    Stripe
+                  </text>
+                </svg>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -583,6 +691,38 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </p>
             </div>
 
+            {/* Google Sign In Button */}
+            <button
+              type="button"
+              className="auth-google-btn"
+              onClick={handleGoogleSignIn}
+              disabled={isLoading}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24">
+                <path
+                  fill="#4285F4"
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                />
+              </svg>
+              Continue with Google
+            </button>
+
+            <div className="auth-divider">
+              <span>or</span>
+            </div>
+
             <form onSubmit={handleSubmit} className="auth-form">
               {!isLogin && (
                 <div className="form-group">
@@ -593,6 +733,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="John Doe"
+                    disabled={isLoading}
                   />
                 </div>
               )}
@@ -604,6 +745,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@company.com"
+                  disabled={isLoading}
                 />
               </div>
               <div className="form-group">
@@ -614,13 +756,28 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
+                  disabled={isLoading}
                 />
               </div>
 
-              {error && <div className="auth-error">{error}</div>}
+              {displayError && <div className="auth-error">{displayError}</div>}
 
-              <button type="submit" className="auth-submit">
-                {isLogin ? "Sign In" : "Create Account"}
+              <button
+                type="submit"
+                className="auth-submit"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <span className="auth-loading">
+                    <span className="loading-dot"></span>
+                    <span className="loading-dot"></span>
+                    <span className="loading-dot"></span>
+                  </span>
+                ) : isLogin ? (
+                  "Sign In"
+                ) : (
+                  "Create Account"
+                )}
               </button>
             </form>
 
@@ -628,14 +785,33 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               {isLogin ? (
                 <p>
                   Don't have an account?{" "}
-                  <button onClick={() => setIsLogin(false)}>Sign up</button>
+                  <button
+                    onClick={() => setIsLogin(false)}
+                    disabled={isLoading}
+                  >
+                    Sign up
+                  </button>
                 </p>
               ) : (
                 <p>
                   Already have an account?{" "}
-                  <button onClick={() => setIsLogin(true)}>Log in</button>
+                  <button onClick={() => setIsLogin(true)} disabled={isLoading}>
+                    Log in
+                  </button>
                 </p>
               )}
+            </div>
+
+            <div className="auth-demo">
+              <p>Want to try first?</p>
+              <button
+                type="button"
+                onClick={handleDemoLogin}
+                disabled={isLoading}
+                className="auth-demo-btn"
+              >
+                🚀 Try Demo Account
+              </button>
             </div>
           </div>
         </div>

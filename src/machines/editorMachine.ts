@@ -4,6 +4,8 @@ import {
   modifyTextStream,
   type WritingTone,
   type ModifyAction,
+  type EditorContext,
+  type ContinuationLength,
 } from "../lib/ai";
 
 export const editorMachine = setup({
@@ -15,11 +17,18 @@ export const editorMachine = setup({
       selectedText: string;
     },
     events: {} as
-      | { type: "GENERATE"; currentText: string; tone: WritingTone }
+      | {
+          type: "GENERATE";
+          currentText: string;
+          tone: WritingTone;
+          editorContext?: EditorContext;
+          length?: ContinuationLength;
+        }
       | {
           type: "GENERATE_WITH_ACTION";
           selectedText: string;
           action: ModifyAction;
+          editorContext?: EditorContext;
         }
       | { type: "AI.CHUNK"; chunk: string }
       | { type: "AI.DONE" }
@@ -35,14 +44,24 @@ export const editorMachine = setup({
         input,
         sendBack,
       }: {
-        input: { text: string; tone: WritingTone };
+        input: {
+          text: string;
+          tone: WritingTone;
+          editorContext?: EditorContext;
+          length?: ContinuationLength;
+        };
         sendBack: (event: any) => void;
       }) => {
         let cancelled = false;
 
         const run = async () => {
           try {
-            const stream = generateContinuationStream(input.text, input.tone);
+            const stream = generateContinuationStream(
+              input.text,
+              input.tone,
+              input.editorContext,
+              input.length || "short"
+            );
             for await (const chunk of stream) {
               if (cancelled) break;
               sendBack({ type: "AI.CHUNK", chunk });
@@ -70,14 +89,22 @@ export const editorMachine = setup({
         input,
         sendBack,
       }: {
-        input: { text: string; action: ModifyAction };
+        input: {
+          text: string;
+          action: ModifyAction;
+          editorContext?: EditorContext;
+        };
         sendBack: (event: any) => void;
       }) => {
         let cancelled = false;
 
         const run = async () => {
           try {
-            const stream = modifyTextStream(input.text, input.action);
+            const stream = modifyTextStream(
+              input.text,
+              input.action,
+              input.editorContext
+            );
             for await (const chunk of stream) {
               if (cancelled) break;
               sendBack({ type: "AI.CHUNK", chunk });
@@ -137,6 +164,10 @@ export const editorMachine = setup({
         input: ({ event }) => ({
           text: (event as any).currentText,
           tone: (event as any).tone as WritingTone,
+          editorContext: (event as any).editorContext as
+            | EditorContext
+            | undefined,
+          length: (event as any).length as ContinuationLength | undefined,
         }),
       },
       on: {
@@ -193,6 +224,9 @@ export const editorMachine = setup({
         input: ({ context, event }) => ({
           text: context.pendingSuggestion || context.selectedText,
           action: (event as any).action as ModifyAction,
+          editorContext: (event as any).editorContext as
+            | EditorContext
+            | undefined,
         }),
       },
       on: {

@@ -1,7 +1,7 @@
 /* Header Component Styles - Notion Theme */
 .header {
   padding: 12px 14px;
-  background: var(--notion-bg-primary);
+  background: var(--notion-bg-secondary);
   border-bottom: 1px solid var(--notion-border);
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
@@ -76,6 +76,18 @@
   background: var(--notion-success);
   border-radius: 50%;
   animation: pulse 2s ease-in-out infinite;
+}
+
+.badge-dot.offline {
+  background: var(--notion-warning, #f59e0b);
+}
+
+.offline-badge {
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.offline-badge .badge-text {
+  color: var(--notion-warning, #f59e0b);
 }
 
 .badge-text {

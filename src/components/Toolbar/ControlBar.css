@@ -12,6 +12,13 @@
   gap: 16px;
 }
 
+/* Divider between mode toggle and other controls */
+.control-bar-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--notion-border);
+}
+
 /* Custom Tone Dropdown */
 .tone-selector {
   position: relative;
@@ -126,6 +133,121 @@
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+/* Agent Toggle Button */
+.agent-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 8px;
+  color: var(--notion-accent);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.agent-toggle-btn:hover {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
+  border-color: rgba(99, 102, 241, 0.5);
+}
+
+.agent-toggle-btn.active {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  border-color: transparent;
+  color: white;
+}
+
+.agent-toggle-btn svg {
+  flex-shrink: 0;
+}
+
+/* Continue Writing with Length Dropdown */
+.continue-writing-container {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.continue-writing-container .action-button {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.length-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 36px;
+  background: linear-gradient(135deg, #5558e3 0%, #7a4fd4 100%);
+  border: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.length-dropdown-trigger:hover:not(:disabled) {
+  background: linear-gradient(135deg, #4a4dd0 0%, #6d42c7 100%);
+}
+
+.length-dropdown-trigger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.length-chevron {
+  transition: transform 0.2s ease;
+}
+
+.length-chevron.open {
+  transform: rotate(180deg);
+}
+
+.length-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  min-width: 180px;
+  background: var(--notion-bg-secondary);
+  border: 1px solid var(--notion-border);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  padding: 6px;
+  z-index: 1000;
+  animation: dropdown-fade-in 0.15s ease;
+}
+
+.length-option {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.length-option:hover {
+  background: var(--notion-bg-hover);
+}
+
+.length-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--notion-text-primary);
+}
+
+.length-description {
+  font-size: 0.75rem;
+  color: var(--notion-text-secondary);
 }
 
 /* Responsive */

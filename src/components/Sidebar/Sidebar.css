@@ -2,6 +2,7 @@
   width: 260px;
   min-width: 260px;
   background: var(--notion-bg-secondary);
+  border-right: 1px solid var(--notion-border);
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -16,6 +17,7 @@
 .sidebar.collapsed {
   width: 0;
   min-width: 0;
+  border-right: none;
   transform: translateX(-100%);
   position: absolute;
 }
@@ -28,6 +30,7 @@
   padding: 0 16px;
   height: 52px;
   min-height: 52px;
+  border-bottom: 1px solid var(--notion-border);
   gap: 8px;
 }
 
@@ -109,6 +112,34 @@
   flex-shrink: 0;
 }
 
+/* New Folder Button */
+.new-folder-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  margin-top: 8px;
+  border-radius: 8px;
+  background: var(--notion-bg-tertiary);
+  color: var(--notion-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: 1px solid var(--notion-border);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.new-folder-btn:hover {
+  background: var(--notion-bg-hover);
+  color: var(--notion-text-primary);
+}
+
+.new-folder-btn svg {
+  flex-shrink: 0;
+}
+
 /* Sidebar Sections */
 .sidebar-section {
   padding: 0 12px;
@@ -129,6 +160,160 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+/* Folder Styles */
+.folder-container {
+  width: 100%;
+}
+
+.folder-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  color: var(--notion-text-secondary);
+  background: transparent;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+  position: relative;
+}
+
+.folder-item:hover {
+  background: var(--notion-bg-hover);
+}
+
+.folder-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  background: transparent;
+  color: var(--notion-text-muted);
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.folder-toggle:hover {
+  background: var(--notion-bg-tertiary);
+  color: var(--notion-text-primary);
+}
+
+.chevron-icon {
+  transition: transform 0.15s ease;
+}
+
+.chevron-icon.expanded {
+  transform: rotate(90deg);
+}
+
+.folder-icon {
+  flex-shrink: 0;
+  opacity: 0.8;
+  color: var(--notion-accent);
+}
+
+.folder-name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.folder-name-input {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 2px 6px;
+  border: 1px solid var(--notion-accent);
+  border-radius: 4px;
+  background: var(--notion-bg-primary);
+  color: var(--notion-text-primary);
+  outline: none;
+}
+
+.folder-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.1s ease;
+}
+
+.folder-item:hover .folder-actions {
+  opacity: 1;
+}
+
+.folder-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: transparent;
+  color: var(--notion-text-muted);
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.1s ease;
+}
+
+.folder-action-btn:hover {
+  background: var(--notion-bg-tertiary);
+  color: var(--notion-text-primary);
+}
+
+.folder-action-btn.delete:hover {
+  color: #ef4444;
+}
+
+.folder-children {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+/* New Folder Input */
+.new-folder-input-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: var(--notion-bg-tertiary);
+  margin-bottom: 4px;
+}
+
+.new-folder-input {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.875rem;
+  padding: 4px 8px;
+  border: 1px solid var(--notion-border);
+  border-radius: 4px;
+  background: var(--notion-bg-primary);
+  color: var(--notion-text-primary);
+  outline: none;
+}
+
+.new-folder-input:focus {
+  border-color: var(--notion-accent);
+}
+
+/* Document Item inside folder */
+.document-item {
+  gap: 8px;
 }
 
 .sidebar-item {
@@ -280,6 +465,7 @@
   padding: 0 16px;
   height: 52px;
   min-height: 52px;
+  border-top: 1px solid var(--notion-border);
   font-size: 0.75rem;
   color: var(--notion-text-muted);
   display: flex;

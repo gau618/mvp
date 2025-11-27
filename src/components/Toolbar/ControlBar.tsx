@@ -1,12 +1,18 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ActionButton } from "./ActionButton";
-import { TONE_OPTIONS, type WritingTone } from "../../lib/ai";
+import {
+  TONE_OPTIONS,
+  LENGTH_OPTIONS,
+  type WritingTone,
+  type ContinuationLength,
+} from "../../lib/ai";
+import { useProMode } from "../../contexts/ProModeContext";
 import "./ControlBar.css";
 
 interface ControlBarProps {
   isStreaming: boolean;
   canGenerate: boolean;
-  onGenerate: () => void;
+  onGenerate: (length?: ContinuationLength) => void;
   onStop: () => void;
   wordCount: number;
   tone: WritingTone;
@@ -23,7 +29,10 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   onToneChange,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isLengthOpen, setIsLengthOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const lengthDropdownRef = useRef<HTMLDivElement>(null);
+  const { isProMode, toggleAgentPanel, isAgentPanelOpen } = useProMode();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -33,6 +42,12 @@ export const ControlBar: React.FC<ControlBarProps> = ({
         !dropdownRef.current.contains(event.target as Node)
       ) {
         setIsOpen(false);
+      }
+      if (
+        lengthDropdownRef.current &&
+        !lengthDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsLengthOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -138,6 +153,23 @@ export const ControlBar: React.FC<ControlBarProps> = ({
       </div>
 
       <div className="control-bar-actions">
+        {/* Agent Panel Toggle (Pro Mode) */}
+        {isProMode && (
+          <button
+            className={`agent-toggle-btn ${isAgentPanelOpen ? "active" : ""}`}
+            onClick={toggleAgentPanel}
+            title={isAgentPanelOpen ? "Close Agent Panel" : "Open Agent Panel"}
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path
+                d="M9 2L10.5 6L15 9L10.5 12L9 16L7.5 12L3 9L7.5 6L9 2Z"
+                fill="currentColor"
+              />
+            </svg>
+            Agent
+          </button>
+        )}
+
         {isStreaming ? (
           <ActionButton
             variant="danger"
@@ -164,27 +196,72 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             Stop Writing
           </ActionButton>
         ) : (
-          <ActionButton
-            variant="primary"
-            onClick={onGenerate}
-            disabled={!canGenerate}
-            icon={
+          <div className="continue-writing-container" ref={lengthDropdownRef}>
+            <ActionButton
+              variant="primary"
+              onClick={() => onGenerate("short")}
+              disabled={!canGenerate}
+              icon={
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M8 2L9.5 6.5L14 8L9.5 9.5L8 14L6.5 9.5L2 8L6.5 6.5L8 2Z"
+                    fill="currentColor"
+                  />
+                </svg>
+              }
+            >
+              Continue
+            </ActionButton>
+            <button
+              className={`length-dropdown-trigger ${
+                isLengthOpen ? "open" : ""
+              }`}
+              onClick={() => setIsLengthOpen(!isLengthOpen)}
+              disabled={!canGenerate || isStreaming}
+              title="Choose response length"
+            >
               <svg
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
+                width="12"
+                height="12"
+                viewBox="0 0 12 12"
                 fill="none"
-                xmlns="http://www.w3.org/2000/svg"
+                className={`length-chevron ${isLengthOpen ? "open" : ""}`}
               >
                 <path
-                  d="M8 2L9.5 6.5L14 8L9.5 9.5L8 14L6.5 9.5L2 8L6.5 6.5L8 2Z"
-                  fill="currentColor"
+                  d="M3 4.5L6 7.5L9 4.5"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 />
               </svg>
-            }
-          >
-            Continue Writing
-          </ActionButton>
+            </button>
+            {isLengthOpen && (
+              <div className="length-menu">
+                {LENGTH_OPTIONS.map((option) => (
+                  <div
+                    key={option.value}
+                    className="length-option"
+                    onClick={() => {
+                      onGenerate(option.value);
+                      setIsLengthOpen(false);
+                    }}
+                  >
+                    <span className="length-label">{option.label}</span>
+                    <span className="length-description">
+                      {option.description}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>
